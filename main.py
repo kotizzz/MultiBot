@@ -1,8 +1,12 @@
 import telebot
 from telebot import types
 from googletrans import Translator
+import requests
+import json
 
 bot = telebot.TeleBot('6292349988:AAFffqisg-CSkZyTCHHLVzb1STOT8kE6pjc')
+# API_weather = 'a6365ca0d85611d1f47497af4277de00' мой
+API_weather = '3d9de74844d28377e81415151cbe6a66'
 
 # Состояние для отслеживания выбранного языка
 states = {}
@@ -30,6 +34,11 @@ def bot_message(message):
         show_language_selection(message)
     elif message.text == '🏠Главное меню':
         start(message)
+    elif message.text == '🌤Погода':
+        bot.send_message(message.chat.id, 'Вы выбрали функцию прогноза погоды. Впишите свой город:')
+        states[message.chat.id] = 'weather_city'
+    elif states.get(message.chat.id) == 'weather_city':
+        get_weather(message)
 
 def show_language_selection(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -90,5 +99,16 @@ def get_language_code(language):
         '🇪🇸Испанский': 'es'
     }
     return language_codes.get(language)
+
+def get_weather(message):
+    if message.content_type == 'text':
+        city = message.text.strip().lower()
+        res = requests.get(f'https://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_weather}&units=metric')
+        if res.status_code == 200:
+            data = json.loads(res.text)
+            temp = data["main"]["temp"]
+            bot.send_message(message.chat.id, f'Сейчас погода: {temp}')
+        else:
+            bot.send_message(message.chat.id, 'Город указан неверно')
 
 bot.polling(none_stop=True)
