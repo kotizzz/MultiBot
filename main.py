@@ -3,6 +3,8 @@ from telebot import types
 from googletrans import Translator
 import requests
 import json
+import random
+import os
 
 bot = telebot.TeleBot('6292349988:AAFffqisg-CSkZyTCHHLVzb1STOT8kE6pjc')
 API_weather = '3d9de74844d28377e81415151cbe6a66'
@@ -37,6 +39,8 @@ def bot_message(message):
         states[message.chat.id] = 'weather_city'
     elif message.text == '📝Калькулятор':
         calculator_handler(message)
+    elif message.text == '🤡Мем дня':
+        send_daily_meme(message)
     elif states.get(message.chat.id) == 'weather_city':
         get_weather(message)
 
@@ -97,6 +101,7 @@ def get_language_code(language):
         '🇪🇸Испанский': 'es'
     }
     return language_codes.get(language)
+
 def get_weather(message):
     if message.content_type == 'text':
         city = message.text.strip().lower()
@@ -129,5 +134,17 @@ def calculate_expression(message):
             bot.send_message(message.chat.id, 'Неверное выражение')
     else:
         bot.send_message(message.chat.id, 'Неверный выбор')
+
+def send_daily_meme(message):
+    meme_folder = 'C:/Users/krz20/OneDrive/Документы/GitHub/MultiBot/meme'  # Укажите путь к папке с мемами
+
+    meme_files = os.listdir(meme_folder)
+    if meme_files:
+        random_meme = random.choice(meme_files)
+        meme_path = os.path.join(meme_folder, random_meme)
+        with open(meme_path, 'rb') as file:
+            bot.send_photo(message.chat.id, file)
+    else:
+        bot.send_message(message.chat.id, 'Папка с мемами пуста')
 
 bot.polling(none_stop=True)
