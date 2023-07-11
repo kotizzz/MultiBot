@@ -5,10 +5,8 @@ import requests
 import json
 
 bot = telebot.TeleBot('6292349988:AAFffqisg-CSkZyTCHHLVzb1STOT8kE6pjc')
-# API_weather = 'a6365ca0d85611d1f47497af4277de00' мой
 API_weather = '3d9de74844d28377e81415151cbe6a66'
 
-# Состояние для отслеживания выбранного языка
 states = {}
 
 @bot.message_handler(commands=['start'])
@@ -37,6 +35,8 @@ def bot_message(message):
     elif message.text == '🌤Погода':
         bot.send_message(message.chat.id, 'Вы выбрали функцию прогноза погоды. Впишите свой город:')
         states[message.chat.id] = 'weather_city'
+    elif message.text == '📝Калькулятор':
+        calculator_handler(message)
     elif states.get(message.chat.id) == 'weather_city':
         get_weather(message)
 
@@ -54,7 +54,6 @@ def show_language_selection(message):
     markup.row(item6)
 
     bot.send_message(message.chat.id, 'Выберите язык перевода', reply_markup=markup)
-    # Установка состояния для текущего пользователя
     states[message.chat.id] = 'select_language'
     bot.register_next_step_handler(message, language_selection_handler)
 
@@ -66,7 +65,6 @@ def language_selection_handler(message):
 
         dest = get_language_code(message.text)
         if dest:
-            # Установка состояния для текущего пользователя
             states[message.chat.id] = dest
             bot.send_message(message.chat.id, 'Введите текст для перевода')
             bot.register_next_step_handler(message, translation_handler)
@@ -99,7 +97,6 @@ def get_language_code(language):
         '🇪🇸Испанский': 'es'
     }
     return language_codes.get(language)
-
 def get_weather(message):
     if message.content_type == 'text':
         city = message.text.strip().lower()
@@ -110,5 +107,27 @@ def get_weather(message):
             bot.send_message(message.chat.id, f'Сейчас погода: {temp}')
         else:
             bot.send_message(message.chat.id, 'Город указан неверно')
+
+def calculator_handler(message):
+    bot.send_message(message.chat.id, 'Введите выражение для расчета:')
+    states[message.chat.id] = 'calculator'
+    bot.register_next_step_handler(message, calculate_expression)
+
+def calculate_expression(message):
+    if message.chat.id in states and states[message.chat.id] == 'calculator':
+        if message.text == '📝Калькулятор':
+            bot.send_message(message.chat.id, 'Введите выражение для расчета:')
+            return
+        elif message.text == '🏠Главное меню':
+            start(message)
+            return
+
+        try:
+            result = eval(message.text)
+            bot.send_message(message.chat.id, f'Результат: {result}')
+        except Exception:
+            bot.send_message(message.chat.id, 'Неверное выражение')
+    else:
+        bot.send_message(message.chat.id, 'Неверный выбор')
 
 bot.polling(none_stop=True)
